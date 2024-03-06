@@ -17,6 +17,7 @@ import nltk
 from nltk.stem.porter import *
 from nltk.corpus import stopwords
 
+
 PROJECT_ID = 'irfinalproject-415108'
 def get_bucket(bucket_name):
     return storage.Client(PROJECT_ID).bucket(bucket_name)
@@ -99,8 +100,8 @@ class InvertedIndex:
         -----------
           docs: dict mapping doc_id to list of tokens
         """
-        self.pre_calc_tf_idf = OrderedDict()
-        self.pre_calc_cossin = defaultdict(list)
+        self.doc_tf_idf_doc_len = {}
+        # self.doc_len = Counter()
         self.doc_count = 0
         self.doc_len_avg = 0
         # stores document frequency per term
@@ -197,29 +198,13 @@ class InvertedIndex:
                 locs = writer.write(b)
                 # save file locations to index
                 posting_locs[w].extend(locs)
-            path = str(Path(base_dir) / f'{bucket_id}_posting_locs.pickle')
+            # Ido's changes
+            path = f'index_posting_locs_body/{bucket_id}_posting_locs.pickle'
             bucket = None if bucket_name is None else get_bucket(bucket_name)
             with _open(path, 'wb', bucket) as f:
                 pickle.dump(posting_locs, f)
         return bucket_id
 
-    @staticmethod
-    def write_a_posting_list(b_w_pl, bucket_name):
-        posting_locs = defaultdict(list)
-        bucket_id, list_w_pl = b_w_pl
-
-        with closing(MultiFileWriter(".", bucket_id, bucket_name)) as writer:
-            for w, pl in list_w_pl:
-                # convert to bytes
-                b = b''.join([(doc_id << 16 | (tf & TF_MASK)).to_bytes(TUPLE_SIZE, 'big')
-                              for doc_id, tf in pl])
-                # write to file(s)
-                locs = writer.write(b)
-                # save file locations to index
-                posting_locs[w].extend(locs)
-            writer.upload_to_gcp()
-            InvertedIndex._upload_posting_locs(bucket_id, posting_locs, bucket_name)
-        return bucket_id
 
     @staticmethod
     def read_index(base_dir, name, bucket_name=None):
@@ -227,97 +212,3 @@ class InvertedIndex:
         bucket = None if bucket_name is None else get_bucket(bucket_name)
         with _open(path, 'rb', bucket) as f:
             return pickle.load(f)
-
-
-class pre_calc:
-    # def __init__(self):
-
-    @staticmethod
-    def tf_idf(doc_id, index, token):
-        N = index.doc_count
-        if index.df.get(token) is not None:
-            df = index.df[token]
-            idf = math.log(N / df, 10)
-            tf_list = index._posting_list[token]
-            for id, tf in tf_list:
-                if id == doc_id:
-                    index.pre_calc_tf_idf[(doc_id, token)] = tf * idf
-                    break
-
-    @staticmethod
-    def tokenize(text, STEMMING=False):
-        RE_WORD = re.compile(r"""[\#\@\w](['\-]?\w){2,24}""", re.UNICODE)
-        english_stopwords = frozenset(stopwords.words('english'))
-        corpus_stopwords = ["category", "references", "also", "external", "links",
-                            "may", "first", "see", "history", "people", "one", "two",
-                            "part", "thumb", "including", "second", "following",
-                            "many", "however", "would", "became"]
-
-        all_stopwords = english_stopwords.union(corpus_stopwords)
-
-        tokens = [token.group() for token in RE_WORD.finditer(text.lower())]
-
-        if STEMMING:
-            stemmer = PorterStemmer()
-            list_of_tokens = [stemmer.stem(x) for x in tokens if x not in all_stopwords]
-        else:
-            list_of_tokens = [x for x in tokens if x not in all_stopwords]
-
-        return list_of_tokens
-
-    @staticmethod
-    def pre_cosin(tokens_doc_pairs, index):
-        for tokens, doc_id in tokens_doc_pairs.collect():
-            for token in tokens:
-                if index.df.get(token) is not None:
-                    calc = index.pre_calc_cossin[doc_id][0] + math.pow(index.pre_calc_tf_idf[(doc_id, token)],2)
-                    index.pre_calc_cossin[doc_id] = (calc, index.pre_calc_cossin[doc_id][1])
-
-
-# class sim_calc:
-#     @staticmethod
-#     def BM25(tokens, index, K=1.2, B=0.75):
-#         query_counter = Counter(tokens)
-#         BM25_value_per_doc = Counter()
-#         for token in tokens:
-#             # calc idf for specific token
-#             if index.df.get(token) is not None:
-#                 token_df = index.df[token]
-#             else:
-#                 continue
-#             token_idf = math.log(index.doc_count / token_df, 10)
-#             # loading posting list with (word, (doc_id, tf))
-#             tf_list = index._posting_list[token]
-#             for id, tf in tf_list:
-#                 # normalized tf (by the length of document)
-#                 numerator = tf * (K + 1)
-#                 denominator = tf + K * (1 - B + (B * index.pre_calc_cosine[id][1]) / index.doc_len_avg)
-#                 query_factor = ((K + 1) * query_counter[token]) / (K + query_counter[token])
-#                 doc_BM25_value[id] += token_idf * (numerator / denominator) * query_factor
-#         sorted_doc_BM25_value = doc_BM25_value.most_common()
-#         return sorted_doc_BM25_value
-#
-    # def cosin(tokens, index):
-    #     query_counter = Counter(tokens)
-    #     numerator_value_per_doc = Counter()
-    #     denominator_query = 0
-    #     for token in tokens:
-    #         denominator_query += math.pow(query_counter[token], 2)
-    #         tf_list = index._posting_list[token]
-    #         for id, tf in tf_list:
-    #             numerator_value_per_doc[id] += tf * query_counter[token]
-    #     cosin_doc_val = Counter()
-    #     for id in numerator_value_per_doc.keys():
-    #         denominator_doc = index.pre_calc_cossin[doc_id][0]
-    #         cosin_doc_val[id] = numerator_value_per_doc[id] / math.sqrt(denominator_doc * denominator_query)
-    #     sorted_cosin_doc_val = cosin_doc_val.most_common()
-    #     return sorted_cosin_doc_val
-#
-#     def compound_ranking(alpha, tokens, index):
-#         bm25_result = BM25(tokens, index)
-#         cosin_result = cosin(tokens, index)
-#         compound_counter = Counter()
-#         for id in cosin_result.keys():
-#             compound_counter[id] = (alpha * bm25_result[id]) + ((1 - alpha) * cosin_result[id])
-#         sorted_compound_counter = compound_counter.most_common()
-#         return sorted_compound_counter
