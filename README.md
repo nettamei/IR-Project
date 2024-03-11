@@ -19,11 +19,11 @@ In order to reduce search time, we added a few data structures to the inverted i
 - id_title_dict: <Document id: (title, title length)> In the title index, this is for returning the final solution with the title and for normalization using title length.
 
 Query Preprocessing
-In addition to the preprocessing we did on the query, we gave weight to each token in the query.
+- In addition to the preprocessing we did on the query, we gave weight to each token in the query.
 Words that were inside quotation marks are given more weight because they are more likely to be the essence of the query.
 
 Query Expansion
-For query expansion we used the package nltk.wordnet in order to get synonyms and hyponyms for the query words and added them to the query.
+- For query expansion we used the package nltk.wordnet in order to get synonyms and hyponyms for the query words and added them to the query.
 
 Search
 For the search we used 5 components:
@@ -36,11 +36,11 @@ For the search we used 5 components:
 
 Inverted indexes used:
 
-Body Inverted Index (stemmed).
-Title Inverted Index (not stemmed).
-Anchor text Inverted Index (stemmed).
-PageRank dictionary (normalized).
-PageView dictionary (normalized).
+- Body Inverted Index (stemmed).
+- Title Inverted Index (not stemmed).
+- Anchor text Inverted Index (stemmed).
+- PageRank dictionary (normalized).
+- PageView dictionary (normalized).
 
 Each of the components in the search process got different weight for the final calculation of the similarity.
 The queries are seperated into 3 groups, question queries, queries of one word and others.
