@@ -28,7 +28,7 @@ Query Expansion
 Search with 5 components
 - Title - binary ranking, does the wanted word exist in the title or not.
 - BM25 - similarity measue using the formula of BM25 and B = 0.75, K = 1.2
-- Anchore text - the number of times a page is referenced from anchor text
+- Anchor text - the number of times a page is referenced from anchor text
   * In order to get more useful information we modified the anchor text structure to a form that we could retrieve information about the anchor text using a token as a key and not document id (Posting list modifications).
 - Page view - number of times the page was viewed
 - Page rank - page authority
