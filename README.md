@@ -25,8 +25,7 @@ Words that were inside quotation marks are given more weight because they are mo
 Query Expansion
 - For query expansion we used the package nltk.wordnet in order to get synonyms and hyponyms for the query words and added them to the query.
 
-Search
-For the search we used 5 components:
+Search with 5 components
 - Title - binary ranking, does the wanted word exist in the title or not.
 - BM25 - similarity measue using the formula of BM25 and B = 0.75, K = 1.2
 - Anchore text - the number of times a page is referenced from anchor text
