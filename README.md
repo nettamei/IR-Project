@@ -13,7 +13,10 @@ Preprocessing the data
 - Building inverted indexs (title, body, anchor, page rank, page view)
 
 In order to reduce search time, we added a few data structures to the inverted indexes during the preprocessing of the data:
-
+- doc_tf_idf_doc_len: <Document id: (tf-idf values, document length)> In the cosine similarity calculation we tried, the denomenator part can be precalculated because it doesn't have a query factor, only document factor.
+- doc_count - number of documents in the corpus
+- doc_len_avg - average length of document in the corpus
+- id_title_dict: <Document id: (title, title length)> In the title index, this is for returning the final solution with the title and for normalization using title length.
 
 Query Preprocessing
 In addition to the preprocessing we did on the query, we gave weight to each token in the query.
@@ -24,6 +27,7 @@ For the search we used 5 components:
 - Title - binary ranking, does the wanted word exist in the title or not.
 - BM25 - similarity measue using the formula of BM25 and B = 0.75, K = 1.2
 - Anchore text - the number of times a page is referenced from anchor text
+  * In order to get more useful information we modified the anchor text structure to a form that we could retrieve information about the anchor text using a token as a key and not document id.
 - Page view - number of times the page was viewed
 - Page rank - page authority
 
