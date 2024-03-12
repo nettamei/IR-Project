@@ -208,7 +208,7 @@ def search():
     doc_score = res_counter.most_common()
     final_doc_score = doc_score[:100]
 
-    for i in range(0, 100):
+    for i in range(0, len(final_doc_score)):
         res.append((str(final_doc_score[i][0]), (index_title_not_stemmed.id_title_dict[final_doc_score[i][0]])[0]))
 
     return jsonify(res)
